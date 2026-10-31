@@ -1,6 +1,7 @@
 
 outputs/
 data/*.csv
+data/raw
 data/*.parquet
 *.h5
 
