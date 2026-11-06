@@ -28,8 +28,8 @@ POS_COLS = ["N", "E", "D"]  # position columns, always first
 def load_flight(
     path: Path,
     feature_cols: Sequence[str] = POS_COLS,
-    max_gap: float = 2.0,
-    start_tol: float = 0.0,
+    max_gap: float = 0.5,
+    start_tol: float = 1.0,
 ) -> List[np.ndarray]:
     """
     Load one flight CSV and return its segments.
@@ -75,8 +75,8 @@ def load_flight(
 def load_segments(
     files: Sequence[Path],
     feature_cols: Sequence[str] = POS_COLS,
-    max_gap: float = 2.0,
-    start_tol: float = 0.0,
+    max_gap: float = 0.5,
+    start_tol: float = 1.0,
 ) -> List[np.ndarray]:
     """Load many flight files and return all their segments in one list."""
     segments = []
