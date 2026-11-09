@@ -79,9 +79,8 @@ def prepare_data(cfg: Config) -> dict:
 
 def evaluate_in_meters(trainer, x_scaler, y_scaler, X, Y):
     """Predict on real-unit windows. Returns (predictions, metrics) in meters."""
-    # trainer.evaluate works on scaled data, so its own metrics are ignored here
-    scaled_pred = trainer.evaluate(x_scaler.transform(X), y_scaler.transform(Y))["predictions"]
-    pred = y_scaler.inverse_transform(scaled_pred)
+    scaled_pred = trainer.predict(x_scaler.transform(X))  # the trainer works on scaled data
+    pred = y_scaler.inverse_transform(scaled_pred)        # back to meters
     return pred, compute_all_metrics(pred, Y)
 
 
@@ -92,11 +91,15 @@ def run_pipeline(cfg: Config, data: dict, cell_type: str = "lstm") -> dict:
     # ---- 1. reproducibility ----
     torch.manual_seed(cfg.seed)
 
-    # ---- 2. data loader (train windows, scaled) ----
+    # ---- 2. data loaders (scaled windows) ----
     train_dataset = TrajectoryDataset(
         x_scaler.transform(data["X_train"]), y_scaler.transform(data["Y_train"])
     )
+    val_dataset = TrajectoryDataset(
+        x_scaler.transform(data["X_val"]), y_scaler.transform(data["Y_val"])
+    )
     train_loader = DataLoader(train_dataset, batch_size=cfg.batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=cfg.batch_size)
     print(f"\n=== [{cell_type.upper()}] {len(train_dataset)} train windows ===")
 
     # ---- 3. model ----
@@ -110,9 +113,9 @@ def run_pipeline(cfg: Config, data: dict, cell_type: str = "lstm") -> dict:
 
     # ---- 4. training ----
     trainer = Trainer(model, learning_rate=cfg.learning_rate)
-    trainer.train(train_loader, epochs=cfg.epochs)
+    trainer.train(train_loader, epochs=cfg.epochs, val_loader=val_loader, patience=cfg.patience)
 
-    # ---- 5. evaluation (metrics in meters) ----
+    # ---- 5. evaluation (metrics in meters; the model has the best-validation weights) ----
     _, val_metrics = evaluate_in_meters(trainer, x_scaler, y_scaler, data["X_val"], data["Y_val"])
     pred_test, test_metrics = evaluate_in_meters(
         trainer, x_scaler, y_scaler, data["X_test"], data["Y_test"]

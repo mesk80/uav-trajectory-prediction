@@ -22,54 +22,6 @@ import torch
 from torch.utils.data import Dataset
 
 
-def make_windows(
-    trajectory: np.ndarray,
-    in_len: int,
-    out_len: int,
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Slice one trajectory into (input_window, target_window) pairs.
-
-    Example with in_len=10, out_len=5:
-        window 0: input = points[0:10],  target = points[10:15]
-        window 1: input = points[1:11],  target = points[11:16]
-        ... and so on, sliding by 1 step each time.
-
-    Returns
-    -------
-    X : np.ndarray, shape (num_windows, in_len, 3)
-    Y : np.ndarray, shape (num_windows, out_len, 3)
-    """
-    X, Y = [], []
-    n = len(trajectory)
-    last_start = n - in_len - out_len + 1
-
-    for start in range(last_start):
-        X.append(trajectory[start : start + in_len])
-        Y.append(trajectory[start + in_len : start + in_len + out_len])
-
-    return np.array(X, dtype=np.float32), np.array(Y, dtype=np.float32)
-
-
-def train_test_split_by_time(
-    X: np.ndarray,
-    Y: np.ndarray,
-    train_ratio: float = 0.8,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Split windows into train/test sets.
-
-    IMPORTANT: this split by TIME ORDER (first 80% = train, last 20% =
-    test), not randomly. For trajectory/time-series data, a random
-    split would leak information from the future into training and
-    make test results look better than they really are.
-    """
-    split_index = int(train_ratio * len(X))
-    X_train, X_test = X[:split_index], X[split_index:]
-    Y_train, Y_test = Y[:split_index], Y[split_index:]
-    return X_train, X_test, Y_train, Y_test
-
-
 class TrajectoryDataset(Dataset):
     """
     Wraps our numpy arrays (X, Y) so PyTorch's DataLoader can use them.

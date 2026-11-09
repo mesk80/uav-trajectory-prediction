@@ -21,7 +21,7 @@ class Config:
     out_sec: float = 5.0         # how many seconds the model must predict
     dt: float = 0.1              # time step of the data, in seconds
     stride: int = 1              # how many samples the window moves each step
-    relative_input: bool = False # if True, input positions are relative to the last input point
+    relative_input: bool = True  # if True, input positions are relative to the last input point
     max_gap: float = 0.5         # a time gap larger than this (seconds) cuts the flight
     start_tol: float = 1.0       # meters; rows this close to the start (before takeoff) are dropped
     feature_cols: Tuple[str, ...] = ("N", "E", "D")  # input columns, position (N, E, D) first
@@ -32,6 +32,7 @@ class Config:
 
     # ----- training settings -----
     epochs: int = 60
+    patience: int = 10         # stop if the validation loss does not improve for this many epochs
     batch_size: int = 16
     learning_rate: float = 1e-3
 
